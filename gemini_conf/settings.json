@@ -8,14 +8,7 @@
       "selectedType": "oauth-personal"
     }
   },
-  "mcpServers": {
-    "playwright": {
-      "command": "npx",
-      "args": [
-        "@playwright/mcp@latest"
-      ]
-    }
-  },
+  "mcpServers": {},
   "ui": {
     "theme": "Atom One"
   }
