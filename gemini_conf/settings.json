@@ -11,5 +11,8 @@
   "mcpServers": {},
   "ui": {
     "theme": "Atom One"
+  },
+  "general": {
+    "previewFeatures": true
   }
 }

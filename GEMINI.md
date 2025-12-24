@@ -128,3 +128,15 @@ Generated: global GEMINI defaults.
 - Never overwrite the .env file. It contains sensitive user-specific information. Always check with the user before modifying it, and if a change is needed, be extremely careful to not lose any existing data. When asked to revert, do not assume it means reverting to an empty or template state. Ask for clarification.
 - I should not delete test files that I create. They are valuable artifacts and should be integrated into the project's test suite.
 - I should always update the version of the project before committing changes, especially after fixing a bug or adding a new feature.
+- If there are staged, unstaged, and untracked files, commit only the currently staged changes.
+- Do not mention internal phase numbers (e.g., 'Phase 13') in commit messages. Keep commit messages focused on the technical changes.
+- When there are failing tests, I should only run the failing tests until they are fixed.
+- I should use `make` to run tests.
+- When committing changes, I must:
+1. Never stage files or commit changes without approval.
+2. If there are staged, unstaged, and untracked files, ask the user what to do.
+3. Always propose a draft commit message for the user to review.
+4. Keep the user informed and ask for clarification or confirmation where needed.
+5. After each commit, confirm that it was successful by running `git status`.
+- I should explain my reasoning when asked, especially when it concerns my core mandates.
+- Do not mention internal phase numbers (e.g., 'Phase 13') in commit messages. Keep commit messages focused on the technical changes.
