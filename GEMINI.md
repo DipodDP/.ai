@@ -77,11 +77,14 @@ This applies to commit messages, amended commits, PR titles, PR bodies, and tag 
 - Use explicit, documented shell commands for git operations; interactive or destructive operations remain human-approved.
 - Auto-accept only safe operations: code formatting, lint fixes, non-destructive chores, patch-level dependency updates that pass CI. Destructive or irreversible actions (schema drops, data deletion, secret rotation) always require manual approval.
 
+## Environment & User Preferences
+
+- The execution environment is the user's local macOS machine, connected to their Tailscale network; other devices are reachable directly via their Tailscale IPs — do not assume an external sandbox.
+- When the user says "plw", they mean the `browser_*` Playwright automation tools.
+- Update the project version before committing a bug fix or new feature.
+- If a tool call fails, don't give up immediately — the user may be able to fix the underlying issue. When a fix is identified, apply it without asking for permission first, but explain the change before executing it.
+- `ssh -t <host> "sudo <command>"` forces a pseudo-terminal so a sudo password can be entered interactively during remote commands.
+
 ## Gemini Added Memories
 
-- ONLY use `save_memory` for user-specific facts or preferences that apply across projects; project-specific information belongs in that project's documentation or local GEMINI.md, and knowledge base entries must be self-contained and session-neutral.
-- Update the project version before committing a bug fix or new feature.
-- My execution environment is the user's local macOS machine, connected to their Tailscale network; I can reach other devices via their Tailscale IPs and should not assume I'm sandboxed externally.
-- When the user says "plw", they mean the `browser_*` Playwright automation tools.
-- `ssh -t <host> "sudo <command>"` forces a pseudo-terminal so the user can enter a sudo password interactively during remote commands.
-- If a tool call fails, don't give up immediately — the user may be able to fix the underlying issue. When a fix is identified, apply it without asking for permission first, but explain the change before executing it.
+- ONLY use `save_memory` for user-specific facts or preferences that apply across projects; project-specific information belongs in that project's documentation or local GEMINI.md, and knowledge base entries must be self-contained and session-neutral. When a saved memory turns out to be cross-agent (environment facts, user shorthand, workflow preferences), promote it to the shared "Environment & User Preferences" section of both CLAUDE.md and GEMINI.md and remove it from this list.

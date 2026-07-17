@@ -76,3 +76,11 @@ This applies to commit messages, amended commits, PR titles, PR bodies, and tag 
 - Prefer web fetch for authoritative references (RFCs, SDK docs, API specs); include source URL and fetch timestamp. If unavailable, fall back to verified cached or explicitly cited sources.
 - Use explicit, documented shell commands for git operations; interactive or destructive operations remain human-approved.
 - Auto-accept only safe operations: code formatting, lint fixes, non-destructive chores, patch-level dependency updates that pass CI. Destructive or irreversible actions (schema drops, data deletion, secret rotation) always require manual approval.
+
+## Environment & User Preferences
+
+- The execution environment is the user's local macOS machine, connected to their Tailscale network; other devices are reachable directly via their Tailscale IPs — do not assume an external sandbox.
+- When the user says "plw", they mean the `browser_*` Playwright automation tools.
+- Update the project version before committing a bug fix or new feature.
+- If a tool call fails, don't give up immediately — the user may be able to fix the underlying issue. When a fix is identified, apply it without asking for permission first, but explain the change before executing it.
+- `ssh -t <host> "sudo <command>"` forces a pseudo-terminal so a sudo password can be entered interactively during remote commands.
