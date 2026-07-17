@@ -1,137 +1,78 @@
-Global configuration and standards for Claude-assisted development workflows.
+# Global Agent Standards
 
-Purpose
+Global defaults for AI-assisted development. The core sections below are kept identical in `CLAUDE.md` and `GEMINI.md`; only the agent-specific section at the end may differ. Local `CLAUDE.md` / `GEMINI.md` files in repositories may extend or override these rules.
 
-This global CLAUDE.md defines organization-wide defaults, standards, and tool preferences for projects that integrate Claude as a development or automation assistant.
-Place this file at ~/.claude/CLAUDE.md to apply guidance globally across repositories.
+## Approval Workflow
 
-Scope
+- Never stage files, commit, or deploy changes without explicit human approval.
+- Present a diff or summary for review before any action that modifies code or infrastructure.
+- If there are staged, unstaged, and untracked files at commit time, ask the user what to do.
+- Always propose a draft commit message for review, and confirm success with `git status` after committing.
 
-Applies to all projects, environments, and automation pipelines that use Claude for development, code review, documentation, or deployment tasks.
+## Test-Driven Development
 
-Core Standards
-1. Approval Workflow
+- Follow strict TDD: write failing tests → implement minimal code to pass → refactor.
+- Prefer small, isolated unit tests and fast integration tests.
+- Work on atomic features only — one self-contained piece of functionality at a time. After completing one, summarize what was done and its impacts, then wait for review before proceeding.
+- When tests fail, keep running only the failing test until it is fixed, then run the rest.
+- Preserve existing test cases unless a functional change truly requires updates; ask before altering or removing tests.
+- Do not delete test files you create when they add lasting value and don't duplicate existing checks — integrate them into the project's test suite.
 
-Never stage, commit, or deploy changes without explicit human approval.
+## Error Handling
 
-Claude must present a diff or summary for review before any action that modifies code or infrastructure.
+- Fail fast and surface actionable errors; never swallow exceptions or return ambiguous results.
+- Structured error responses for APIs:
 
-2. Test-Driven Development (TDD)
+  ```json
+  { "code": "ERR_CODE", "message": "Readable explanation", "details": {}, "trace_id": "uuid" }
+  ```
 
-Adopt a strict TDD cycle:
+  - `code` — machine-readable identifier
+  - `message` — human-readable context
+  - `details` — optional structured metadata
+  - `trace_id` — UUID for tracing/log correlation
 
-Write failing tests.
+- Log all errors with their trace IDs, limiting sensitive context for privacy and compliance.
 
-Implement minimal code to pass them.
+## REST API Practices
 
-Refactor.
+- Use standard HTTP methods (GET, POST, PUT, PATCH, DELETE) with semantic intent.
+- Resource-oriented endpoints, consistent status codes, pagination for list results.
+- Version APIs and include deprecation guidance in documentation.
 
-Prioritize small, isolated unit tests and fast integration tests.
+## CI / Testing
 
-Work on atomic features only — one self-contained piece of functionality at a time.
+- CI must block merges on failing tests; PRs without tests for new functionality should be flagged.
+- Separate suites: `preflight` (unit + lint, required for PR gating) and `full` (integration + e2e, required before merging to protected branches).
+- Coverage metrics are guidance, not strict blockers.
 
-After completion, Claude should generate a test and integration summary and wait for review before proceeding.
+## Secrets & Deployment
 
-3. Error Handling
+- Never commit or embed secrets; store credentials in an approved secret manager (Vault, AWS Secrets Manager, etc.).
+- Never overwrite `.env` files. Ask before modifying one, take care not to lose existing data, and never assume "revert" means emptying it — ask for clarification.
+- Production deploys require explicit approval; maintain rollback procedures.
+- Database migrations: staging → canary → production rollout, with backups and validated rollback paths.
 
-Fail fast and surface actionable errors.
+## Git Conventions
 
-Avoid swallowing exceptions or returning ambiguous results.
+- Branch naming: `feature/<short-desc>`, `fix/<issue-id>`, `chore/<scope>`.
+- Commit subject ≤72 chars, optional descriptive body, reference issue IDs.
+- No internal phase numbers or session context in commit messages — describe the technical change only.
+- Follow Semantic Versioning for published packages.
 
-Use structured error responses for APIs, following this format:
+### No AI attribution
 
-{
-  "code": "ERR_CODE",
-  "message": "Readable explanation",
-  "details": {},
-  "trace_id": "00000000-0000-0000-0000-000000000000"
-}
+Commit messages MUST describe only the change itself. NEVER add:
 
+- `Co-Authored-By` trailers for Claude, Gemini, AI tools, or any non-human author
+- "🤖 Generated with Claude Code" footers, "Generated by AI" tags, or similar attribution
+- References to Claude, Gemini, Anthropic, Google, AI assistance, or the assistant's involvement
+- PR descriptions or unrelated session context that isn't part of the change
 
-code: machine-readable identifier
+This applies to commit messages, amended commits, PR titles, PR bodies, and tag messages. The same applies to other authored artifacts created on the user's behalf (release notes, changelogs, etc.) unless the user explicitly asks for attribution.
 
-message: human-readable context
+## Tooling Preferences
 
-details: optional structured metadata
-
-trace_id: UUID for tracing/log correlation
-
-Log all errors with their trace IDs, limiting sensitive context for privacy and compliance.
-
-4. REST API Practices
-
-Use standard HTTP methods (GET, POST, PUT, PATCH, DELETE) with semantic intent.
-
-Maintain resource-oriented endpoints and consistent status codes.
-
-Implement pagination for list results.
-
-Always version APIs and include deprecation guidance in documentation.
-
-5. CI / Testing Enforcement
-
-CI must block merges on failing tests.
-
-PRs without tests for new functionality should be flagged.
-
-Define separate preflight (fast) and full (comprehensive) test suites:
-
-Preflight: Unit + lint checks (required for PR gating)
-
-Full: Integration + E2E (required before merging to protected branches)
-
-Encourage incremental commits with verified test coverage; use coverage metrics as guidance, not strict blockers.
-
-6. Secrets & Deployment
-
-Never commit or embed secrets.
-
-Store credentials in approved secret managers (Vault, AWS Secrets Manager, etc.).
-
-Require explicit approvals for production deploys and maintain rollback procedures.
-
-Database migrations must follow: staging → canary → production rollout, with backups and validated rollback paths.
-
-Tooling & Preferences
-1. Documentation Retrieval
-
-Prefer web_fetch (or Claude’s internal doc fetcher) for retrieving authoritative references (RFCs, SDK docs, API specs).
-
-Include source URL and fetch timestamp in any retrieved documentation.
-
-If unavailable, fallback to verified cached or explicitly cited sources.
-
-2. Git & Shell Automation
-
-Use explicit, documented shell commands for Git operations (commit, rebase, merge).
-
-Interactive or destructive operations must remain human-approved.
-
-3. Auto-Accept Rules
-
-Safe operations may be auto-accepted:
-
-Code formatting (Prettier, Black)
-
-Lint fixes
-
-Non-destructive “chore” commits (e.g., comments, whitespace)
-
-Patch-level dependency updates that pass CI
-
-Dangerous or irreversible actions — such as schema drops, data deletions, or secret rotations — require manual approval.
-
-Every auto-accept event must be logged with user, timestamp, and source, and should be reversible when feasible.
-
-Recommended Conventions
-Category	Convention
-Branch naming	feature/<short-desc>, fix/<issue-id>, chore/<scope>
-Commit messages	Short (≤72 chars) subject, optional descriptive body, reference issue IDs
-Versioning	Follow Semantic Versioning for public packages
-Notes
-
-This file serves as a global policy for Claude-assisted workflows.
-
-Local CLAUDE.md files within repositories may extend or override specific rules.
-
-Review and update this document periodically to align with evolving best practices and Claude API capabilities.
+- Prefer web fetch for authoritative references (RFCs, SDK docs, API specs); include source URL and fetch timestamp. If unavailable, fall back to verified cached or explicitly cited sources.
+- Use explicit, documented shell commands for git operations; interactive or destructive operations remain human-approved.
+- Auto-accept only safe operations: code formatting, lint fixes, non-destructive chores, patch-level dependency updates that pass CI. Destructive or irreversible actions (schema drops, data deletion, secret rotation) always require manual approval.

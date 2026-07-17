@@ -1,142 +1,87 @@
-# GEMINI.md (global)
+# Global Agent Standards
 
-> Global configuration and standards for Gemini-assisted development workflows.
+Global defaults for AI-assisted development. The core sections below are kept identical in `CLAUDE.md` and `GEMINI.md`; only the agent-specific section at the end may differ. Local `CLAUDE.md` / `GEMINI.md` files in repositories may extend or override these rules.
 
-## Purpose
+## Approval Workflow
 
-Defines organization-wide defaults for Gemini agents. Apply at `~/.gemini/GEMINI.md` to enforce global rules.
+- Never stage files, commit, or deploy changes without explicit human approval.
+- Present a diff or summary for review before any action that modifies code or infrastructure.
+- If there are staged, unstaged, and untracked files at commit time, ask the user what to do.
+- Always propose a draft commit message for review, and confirm success with `git status` after committing.
 
-## Scope
+## Test-Driven Development
 
-Applies to all environments using Gemini as a developer or automation assistant.
-
-## Core Principles
-
-* **Never stage files or commit changes without approval. If you've got staged, unstaged, and untracked files you should ask user what to do.**
-* **Use strict Test-Driven Development (TDD).**
-* **When there are errors in tests keep running only one failing test until it is fixed  and then run other tests**
-* **Fail fast, log clearly, and recover gracefully.**
-* **Ensure changes maintain project-wide consistency.**
-* **Utilize a Test Driven Development cycle**
-
-  * Write failing tests first, then implement minimal code to pass the tests, then refactor.
-  * Prefer small, focused unit tests and integration tests that run quickly in CI.
-  * Divide task to a separate atomic features and work only on atomic part of fuctionality at one time. Test it integration between parts of an application, give me report of what you've done and let me decide what to do next. 
-
-* **Follow REST API conventions**
-
-  * Use standard HTTP methods (GET/POST/PUT/PATCH/DELETE) semantically.
-  * Resource-oriented URLs, consistent status codes, and pagination for list endpoints.
-  * Version your API and provide clear deprecation paths.
-
-* **Secrets & deployments**
-
-  * Never commit secrets. Store secrets in an approved vault/secret manager (HashiCorp Vault, AWS Secrets Manager, etc.).
-  * Define deployment roles and approvals for production deploys. Maintain rollback/playbook for failed deployments.
-  * For database migrations: require staged rollout (staging -> canary -> production), backups, and validated rollback steps.
-
-
-## Development Behavior
-
-* **Deep Project Awareness**
-
-  * Always analyze the full project tree before editing.
-  * Track interdependencies between files, modules, and test suites.
-  * Anticipate cross-impact: report when changes may affect other areas.
-
-* **Imports & Dependencies**
-
-  * Automatically import missing dependencies when needed.
-  * Remove unused imports if functionality is changed or removed.
-  * Validate dependency consistency after modifications.
-
-* **Code & Tests Stability**
-
-  * Preserve existing test cases unless a functional change truly requires updates.
-  * Request explicit user approval before altering or removing tests.
-  * Favor parameterization and shared utilities to reduce redundant tests.
-
-* **Incremental and Atomic Work**
-
-  * Work on isolated features; integrate gradually.
-  * After completing a unit, summarize impacts and request next steps.
+- Follow strict TDD: write failing tests → implement minimal code to pass → refactor.
+- Prefer small, isolated unit tests and fast integration tests.
+- Work on atomic features only — one self-contained piece of functionality at a time. After completing one, summarize what was done and its impacts, then wait for review before proceeding.
+- When tests fail, keep running only the failing test until it is fixed, then run the rest.
+- Preserve existing test cases unless a functional change truly requires updates; ask before altering or removing tests.
+- Do not delete test files you create when they add lasting value and don't duplicate existing checks — integrate them into the project's test suite.
 
 ## Error Handling
 
-* Fail fast and return actionable errors. Avoid swallowing exceptions.
-* Return actionable structured errors:
+- Fail fast and surface actionable errors; never swallow exceptions or return ambiguous results.
+- Structured error responses for APIs:
 
   ```json
   { "code": "ERR_CODE", "message": "Readable explanation", "details": {}, "trace_id": "uuid" }
   ```
 
-  * `code` — machine-readable error identifier.
-  * `message` — concise, user/developer-facing explanation.
-  * `details` — optional object with extra context for programmatic handling.
-  * `trace_id` — correlation id for logs and tracing (UUID).
-* Log errors with correlation/trace IDs and include minimal context for privacy/security.
+  - `code` — machine-readable identifier
+  - `message` — human-readable context
+  - `details` — optional structured metadata
+  - `trace_id` — UUID for tracing/log correlation
 
-## CI & QA Rules
+- Log all errors with their trace IDs, limiting sensitive context for privacy and compliance.
 
-* All commits must pass TDD-based tests.
-* Separate `preflight` (fast) and `full` (integration/e2e) suites.
-* No merges on failed tests. Coverage metrics are informative, not blocking.
+## REST API Practices
 
-* **TDD enforcement in CI**
+- Use standard HTTP methods (GET, POST, PUT, PATCH, DELETE) with semantic intent.
+- Resource-oriented endpoints, consistent status codes, pagination for list results.
+- Version APIs and include deprecation guidance in documentation.
 
-  * CI must run tests and block merges when tests fail. A PR without tests for new behavior should be blocked or flagged.
-  * Define `preflight` (fast unit tests, lint checks) vs `full` suite (integration, e2e). Require at minimum `preflight` to pass for pull-request gating; `full` suite must pass before merging to protected branches.
-  * Prefer small, incremental commits with tests covering new behavior. Encourage test coverage metrics but avoid blocking on coverage numbers alone without context.
+## CI / Testing
 
+- CI must block merges on failing tests; PRs without tests for new functionality should be flagged.
+- Separate suites: `preflight` (unit + lint, required for PR gating) and `full` (integration + e2e, required before merging to protected branches).
+- Coverage metrics are guidance, not strict blockers.
 
-## Tools Preference
+## Secrets & Deployment
 
-* **Prefer `web_fetch` for documentation**
+- Never commit or embed secrets; store credentials in an approved secret manager (Vault, AWS Secrets Manager, etc.).
+- Never overwrite `.env` files. Ask before modifying one, take care not to lose existing data, and never assume "revert" means emptying it — ask for clarification.
+- Production deploys require explicit approval; maintain rollback procedures.
+- Database migrations: staging → canary → production rollout, with backups and validated rollback paths.
 
-  * `web_fetch` refers to the agreed documentation-fetching mechanism (internal script or tool) that automatically retrieves authoritative docs and references (official RFCs, library docs, API specs). If `web_fetch` is unavailable, fall back to explicit URLs or cached docs with source attribution.
-  * Ensure fetched docs include source URL and fetch timestamp.
-* **Use shell commands for git operations**
+## Git Conventions
 
-  * Prefer explicit, documented shell invocations for git when automating (commit, push, rebase). Keep interactive/destructive operations gated behind human approval.
-* **Enable auto-accept for safe operations**
+- Branch naming: `feature/<short-desc>`, `fix/<issue-id>`, `chore/<scope>`.
+- Commit subject ≤72 chars, optional descriptive body, reference issue IDs.
+- No internal phase numbers or session context in commit messages — describe the technical change only.
+- Follow Semantic Versioning for published packages.
 
-  * Define "safe operations" explicitly. By default, auto-accept is allowed for:
+### No AI attribution
 
-    * Code formatting (e.g., applying `prettier`, `black`), lint fixes, and non-destructive automated chore commits (e.g., whitespace, comment fixes).
-    * Patch-level dependency updates that pass CI.
-  * Auto-accept is disallowed for destructive or irreversible actions (e.g., deleting data, destructive DB migrations, production schema changes, vault secret rotations). Those require manual confirmation and an audit trail.
-  * All auto-accept actions must be logged (who/what accepted it, timestamp, source) and be reversible or tied to an automatic revert mechanism when possible.
+Commit messages MUST describe only the change itself. NEVER add:
 
-## Recommended Conventions
+- `Co-Authored-By` trailers for Claude, Gemini, AI tools, or any non-human author
+- "🤖 Generated with Claude Code" footers, "Generated by AI" tags, or similar attribution
+- References to Claude, Gemini, Anthropic, Google, AI assistance, or the assistant's involvement
+- PR descriptions or unrelated session context that isn't part of the change
 
-* Branch naming: `feature/<short-desc>`, `fix/<issue-id>`, `chore/<area>`.
-* Commit messages: short subject (max 72 chars) + optional body. Reference issue IDs.
-* Semantic versioning for published packages.
+This applies to commit messages, amended commits, PR titles, PR bodies, and tag messages. The same applies to other authored artifacts created on the user's behalf (release notes, changelogs, etc.) unless the user explicitly asks for attribution.
 
-## Notes
+## Tooling Preferences
 
-* This file is intended as a global guidance layer. Individual repositories may extend or narrow these rules through their local `GEMINI.md` files.
-* Review and update this global file periodically to reflect new best practices.
-
-Generated: global GEMINI defaults.
+- Prefer web fetch for authoritative references (RFCs, SDK docs, API specs); include source URL and fetch timestamp. If unavailable, fall back to verified cached or explicitly cited sources.
+- Use explicit, documented shell commands for git operations; interactive or destructive operations remain human-approved.
+- Auto-accept only safe operations: code formatting, lint fixes, non-destructive chores, patch-level dependency updates that pass CI. Destructive or irreversible actions (schema drops, data deletion, secret rotation) always require manual approval.
 
 ## Gemini Added Memories
-- Never overwrite the .env file.
-- The agent has an updated internal guideline:
-- NEVER use `save_memory` for project-specific information; it belongs in project documentation.
-- ONLY use `save_memory` for user-specific facts or preferences that the user explicitly asks to remember, or are clearly about the user's personal workflow, tools, or preferences across different projects/sessions.
-- Never overwrite the .env file. It contains sensitive user-specific information. Always check with the user before modifying it, and if a change is needed, be extremely careful to not lose any existing data. When asked to revert, do not assume it means reverting to an empty or template state. Ask for clarification.
-- I should not delete test files that I create. They are valuable artifacts and should be integrated into the project's test suite.
-- I should always update the version of the project before committing changes, especially after fixing a bug or adding a new feature.
-- If there are staged, unstaged, and untracked files, commit only the currently staged changes.
-- Do not mention internal phase numbers (e.g., 'Phase 13') in commit messages. Keep commit messages focused on the technical changes.
-- When there are failing tests, I should only run the failing tests until they are fixed.
-- I should use `make` to run tests.
-- When committing changes, I must:
-1. Never stage files or commit changes without approval.
-2. If there are staged, unstaged, and untracked files, ask the user what to do.
-3. Always propose a draft commit message for the user to review.
-4. Keep the user informed and ask for clarification or confirmation where needed.
-5. After each commit, confirm that it was successful by running `git status`.
-- I should explain my reasoning when asked, especially when it concerns my core mandates.
-- Do not mention internal phase numbers (e.g., 'Phase 13') in commit messages. Keep commit messages focused on the technical changes.
+
+- ONLY use `save_memory` for user-specific facts or preferences that apply across projects; project-specific information belongs in that project's documentation or local GEMINI.md, and knowledge base entries must be self-contained and session-neutral.
+- Update the project version before committing a bug fix or new feature.
+- My execution environment is the user's local macOS machine, connected to their Tailscale network; I can reach other devices via their Tailscale IPs and should not assume I'm sandboxed externally.
+- When the user says "plw", they mean the `browser_*` Playwright automation tools.
+- `ssh -t <host> "sudo <command>"` forces a pseudo-terminal so the user can enter a sudo password interactively during remote commands.
+- If a tool call fails, don't give up immediately — the user may be able to fix the underlying issue. When a fix is identified, apply it without asking for permission first, but explain the change before executing it.
