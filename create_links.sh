@@ -28,5 +28,17 @@ echo "✓ Linked: ~/.claude/CLAUDE.md -> ~/.ai/CLAUDE.md"
 ln -sf "$HOME_DIR/.ai/GEMINI.md" "$HOME_DIR/.gemini/GEMINI.md"
 echo "✓ Linked: ~/.gemini/GEMINI.md -> ~/.ai/GEMINI.md"
 
+# Link skills from ~/.agents/skills (its own git repo) into ~/.claude/skills
+if [ -d "$HOME_DIR/.agents/skills" ]; then
+  mkdir -p "$HOME_DIR/.claude/skills"
+  for skill in "$HOME_DIR/.agents/skills"/*/; do
+    name="$(basename "$skill")"
+    ln -sfn "../../.agents/skills/$name" "$HOME_DIR/.claude/skills/$name"
+  done
+  echo "✓ Linked: ~/.claude/skills/* -> ~/.agents/skills/*"
+else
+  echo "⚠ Skipped skills: ~/.agents/skills not found (clone your .agents repo first)"
+fi
+
 echo ""
 echo "All AI configuration links created successfully!"
